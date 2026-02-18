@@ -1,0 +1,61 @@
+server:
+  port: 9001
+
+spring:
+  application:
+    name: messaging-api
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/messaging
+    username: postgres
+    password: emran
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        jdbc:
+          time_zone: UTC
+
+  rabbitmq:
+     host: localhost
+     port: 5672
+     username: guest
+     password: guest
+     connection-timeout: 5000
+     requested-heartbeat: 30
+
+  cassandra:
+    contact-points: localhost:9042
+    keyspace-name: messaging
+    username: cassandra
+    password: cassandra
+    datacenter-name: datacenter1
+    request-timeout: 5s
+    connect-timeout: 5s
+
+# ======================
+# JWT CONFIGURATION
+# ======================
+security:
+  jwt:
+    issuer: messaging-api
+    secret: "01715422040-01620829365-kakacr7@#$%^&*()"
+    access-token-expiration-minutes: 60
+    refresh-token-expiration-days: 7
+
+
+logging:
+  level:
+    root: INFO
+    org.springframework.web: INFO
+    org.springframework.security: DEBUG
+    org.springframework.web.socket: DEBUG
+
+
+

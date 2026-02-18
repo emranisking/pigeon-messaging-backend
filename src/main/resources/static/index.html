@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messenger - Login</title>
+    <link rel="stylesheet" href="/css/messenger.css">
+</head>
+<body class="auth-page">
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-logo">
+                <svg viewBox="0 0 36 36" width="48" height="48">
+                    <path d="M18 0C7.854 0 0 7.126 0 16.41c0 5.178 2.533 9.567 6.537 12.58V36l6.554-3.672c1.752.488 3.604.752 5.51.752 9.834 0 17.802-7.127 17.802-15.882C36.403 7.126 28.435 0 18 0z" fill="#0084ff"/>
+                    <path d="M19.88 21.024L15.6 16.56l-8.4 4.704L16.44 11.88l4.44 4.464 8.22-4.704-9.22 9.384z" fill="#fff"/>
+                </svg>
+                <h1>Messenger</h1>
+            </div>
+
+            <!-- Login Form -->
+            <form id="loginForm" class="auth-form active">
+                <h2>Log In</h2>
+                <div class="form-group">
+                    <input type="text" id="loginUsername" placeholder="Username" required autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <input type="password" id="loginPassword" placeholder="Password" required autocomplete="current-password">
+                </div>
+                <div id="loginError" class="form-error"></div>
+                <button type="submit" class="btn-primary" id="loginBtn">
+                    <span class="btn-text">Log In</span>
+                    <span class="btn-loader" style="display:none;"></span>
+                </button>
+                <div class="auth-switch">
+                    Don't have an account? <a href="#" id="showRegister">Create one</a>
+                </div>
+            </form>
+
+            <!-- Register Form -->
+            <form id="registerForm" class="auth-form">
+                <h2>Create Account</h2>
+                <div class="form-group">
+                    <input type="text" id="registerUsername" placeholder="Username" required autocomplete="username" minlength="3" maxlength="50">
+                </div>
+                <div class="form-group">
+                    <input type="password" id="registerPassword" placeholder="Password" required autocomplete="new-password" minlength="6">
+                </div>
+                <div class="form-group">
+                    <input type="password" id="registerConfirm" placeholder="Confirm Password" required autocomplete="new-password">
+                </div>
+                <div id="registerError" class="form-error"></div>
+                <button type="submit" class="btn-primary" id="registerBtn">
+                    <span class="btn-text">Sign Up</span>
+                    <span class="btn-loader" style="display:none;"></span>
+                </button>
+                <div class="auth-switch">
+                    Already have an account? <a href="#" id="showLogin">Log in</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/auth.js"></script>
+</body>
+</html>
