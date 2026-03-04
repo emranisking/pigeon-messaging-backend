@@ -25,10 +25,14 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
     }
 
     @Override
-    public Message<?> preSend(Message<?> message, MessageChannel channel) {
+    public Message<?> preSend(@NonNull Message<?> message, @NonNull MessageChannel channel) {
 
         StompHeaderAccessor accessor =
                 MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
+
+        if (accessor == null) {
+            return message;
+        }
 
         if (StompCommand.CONNECT.equals(accessor.getCommand())) {
 
@@ -48,7 +52,7 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
                             Collections.emptyList()
                     );
 
-            accessor.setUser(authentication); // 🔥 THIS LINE FIXES YOUR PROBLEM
+            accessor.setUser(authentication);
         }
 
         return message;

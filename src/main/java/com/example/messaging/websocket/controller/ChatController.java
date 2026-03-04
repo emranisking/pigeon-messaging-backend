@@ -85,7 +85,7 @@ public class ChatController {
 
             // Update message status in Cassandra to "delivered"
             if (event.getConversationId() != null && event.getCreatedAt() != null) {
-                messageRepository.updateStatus(event.getConversationId().toString(), event.getCreatedAt(), "delivered");
+                messageRepository.updateStatus(event.getConversationId(), event.getCreatedAt(), "delivered");
             }
 
             // Broadcast delivery confirmation to sender
@@ -124,7 +124,7 @@ public class ChatController {
 
             // Update message status in Cassandra to "seen"
             if (event.getConversationId() != null && event.getCreatedAt() != null) {
-                messageRepository.updateStatus(event.getConversationId().toString(), event.getCreatedAt(), "seen");
+                messageRepository.updateStatus(event.getConversationId(), event.getCreatedAt(), "seen");
             }
 
             // Broadcast seen confirmation to sender

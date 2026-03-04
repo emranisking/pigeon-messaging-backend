@@ -40,8 +40,22 @@ const App = (() => {
     }
 
     // ---- Time Formatting ----
+    /**
+     * Normalize any timestamp (ISO string, epoch seconds, epoch millis) to a Date.
+     */
+    function parseTimestamp(value) {
+        if (!value) return new Date();
+        if (value instanceof Date) return value;
+        if (typeof value === 'string') return new Date(value);
+        // Numeric: if < 1e12 treat as epoch seconds, otherwise millis
+        if (typeof value === 'number') {
+            return value < 1e12 ? new Date(value * 1000) : new Date(value);
+        }
+        return new Date();
+    }
+
     function formatTime(isoString) {
-        const d = new Date(isoString);
+        const d = parseTimestamp(isoString);
         const now = new Date();
         const diffMs = now - d;
         const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
@@ -58,7 +72,7 @@ const App = (() => {
     }
 
     function formatFullTime(isoString) {
-        const d = new Date(isoString);
+        const d = parseTimestamp(isoString);
         return d.toLocaleString([], {
             month: 'short', day: 'numeric',
             hour: '2-digit', minute: '2-digit'
@@ -66,7 +80,7 @@ const App = (() => {
     }
 
     function formatDateSeparator(isoString) {
-        const d = new Date(isoString);
+        const d = parseTimestamp(isoString);
         const now = new Date();
         const diffDays = Math.floor((now - d) / (1000 * 60 * 60 * 24));
 
@@ -138,8 +152,8 @@ const App = (() => {
 
         // Sort by last message time, most recent first
         const sorted = [...conversations].sort((a, b) => {
-            const timeA = a.lastMessage ? new Date(a.lastMessage.createdAt) : new Date(a.createdAt || 0);
-            const timeB = b.lastMessage ? new Date(b.lastMessage.createdAt) : new Date(b.createdAt || 0);
+            const timeA = a.lastMessage ? parseTimestamp(a.lastMessage.createdAt) : parseTimestamp(a.createdAt);
+            const timeB = b.lastMessage ? parseTimestamp(b.lastMessage.createdAt) : parseTimestamp(b.createdAt);
             return timeB - timeA;
         });
 
@@ -279,10 +293,10 @@ const App = (() => {
     // ---- Render Messages ----
     function renderMessages(preserveScroll = false) {
         const container = document.getElementById('messagesContainer');
-        const convId = activeConversation;
+        const convId = activeConversation || '_pending_conv';
         const msgs = messages[convId] || [];
 
-        if (!convId) return;
+        if (!activeConversation && !messages['_pending_conv']) return;
 
         const scrolledToBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 50;
         const oldScrollHeight = container.scrollHeight;
@@ -301,7 +315,7 @@ const App = (() => {
         for (let i = 0; i < msgs.length; i++) {
             const msg = msgs[i];
             const isSent = msg.senderId === currentUser.id;
-            const msgDate = new Date(msg.createdAt);
+            const msgDate = parseTimestamp(msg.createdAt);
             const dateKey = msgDate.toDateString();
 
             // Date separator
@@ -315,7 +329,7 @@ const App = (() => {
             const sameSender = msg.senderId === lastSenderId;
             const nextMsg = msgs[i + 1];
             const nextSameSender = nextMsg && nextMsg.senderId === msg.senderId &&
-                new Date(nextMsg.createdAt).toDateString() === dateKey;
+                parseTimestamp(nextMsg.createdAt).toDateString() === dateKey;
             const isNewGroup = !sameSender;
             const isLastInGroup = !nextSameSender;
 
@@ -399,6 +413,30 @@ const App = (() => {
 
         const success = WS.sendMessage(activeOtherUser.id, content, activeConversation);
         if (success) {
+            // Optimistic UI: show the message immediately without waiting for server echo
+            const tempMsg = {
+                messageId: '_pending_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+                conversationId: activeConversation || '_pending_conv',
+                senderId: currentUser.id,
+                receiverId: activeOtherUser.id,
+                content: content,
+                status: 'sent',
+                createdAt: new Date().toISOString(),
+                _pending: true
+            };
+
+            const convId = activeConversation || '_pending_conv';
+            if (!messages[convId]) {
+                messages[convId] = [];
+            }
+            messages[convId].push(tempMsg);
+
+            // Render immediately so sender sees their message
+            if (activeConversation || convId === '_pending_conv') {
+                renderMessages();
+                scrollToBottom();
+            }
+
             input.value = '';
             input.style.height = 'auto';
             updateSendButton();
@@ -468,6 +506,27 @@ const App = (() => {
         // Deduplicate by messageId
         const exists = messages[convId].some(m => m.messageId === msg.messageId);
         if (!exists) {
+            // If this is a server echo of our own sent message, replace the pending/optimistic version
+            if (isSent) {
+                const pendingIdx = messages[convId].findIndex(
+                    m => m._pending && m.senderId === msg.senderId && m.content === msg.content
+                );
+                if (pendingIdx !== -1) {
+                    messages[convId].splice(pendingIdx, 1);
+                }
+                // Also check _pending_conv for new conversations
+                if (messages['_pending_conv'] && messages['_pending_conv'].length > 0) {
+                    const pendingNewIdx = messages['_pending_conv'].findIndex(
+                        m => m._pending && m.senderId === msg.senderId && m.content === msg.content
+                    );
+                    if (pendingNewIdx !== -1) {
+                        messages['_pending_conv'].splice(pendingNewIdx, 1);
+                        if (messages['_pending_conv'].length === 0) {
+                            delete messages['_pending_conv'];
+                        }
+                    }
+                }
+            }
             messages[convId].push(msg);
         }
 
