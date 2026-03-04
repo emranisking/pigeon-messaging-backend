@@ -26,8 +26,15 @@ const WS = (() => {
         const socket = new SockJS('/ws-chat');
         stompClient = Stomp.over(socket);
 
-        // Disable debug logging in production
-        stompClient.debug = () => {};
+        // Enable debug logging for troubleshooting
+        stompClient.debug = (str) => {
+            if (str.startsWith('>>>') || str.startsWith('<<<') ||
+                str.includes('CONNECT') || str.includes('ERROR') ||
+                str.includes('SUBSCRIBE') || str.includes('CONNECTED') ||
+                str.includes('MESSAGE')) {
+                console.log('[STOMP]', str);
+            }
+        };
 
         const headers = {
             'Authorization': `Bearer ${token}`
@@ -40,12 +47,13 @@ const WS = (() => {
             console.log('WebSocket connected');
             if (onConnectionChange) onConnectionChange('connected');
 
-            // Subscribe to incoming messages
+            // Subscribe to incoming messages (use /user/queue/... for proper Spring user destination resolution)
             subscriptions.messages = stompClient.subscribe(
-                `/user/${userId}/queue/messages`,
+                '/user/queue/messages',
                 (frame) => {
                     try {
                         const message = JSON.parse(frame.body);
+                        console.log('[WS] Message received:', message.messageId);
                         if (onMessageReceived) onMessageReceived(message);
                     } catch (e) {
                         console.error('Error parsing message:', e);
@@ -55,10 +63,11 @@ const WS = (() => {
 
             // Subscribe to status updates
             subscriptions.status = stompClient.subscribe(
-                `/user/${userId}/queue/status`,
+                '/user/queue/status',
                 (frame) => {
                     try {
                         const event = JSON.parse(frame.body);
+                        console.log('[WS] Status update:', event.messageId, event.status);
                         if (onStatusUpdate) onStatusUpdate(event);
                     } catch (e) {
                         console.error('Error parsing status:', e);
