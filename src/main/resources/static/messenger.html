@@ -14,7 +14,7 @@
         <!-- ====== SIDEBAR ====== -->
         <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <h2>Chats</h2>
+                <h2>Messenger</h2>
                 <div class="sidebar-header-actions">
                     <button class="icon-btn" id="btnNewChat" title="New Message">
                         <!-- Compose icon -->
@@ -23,7 +23,22 @@
                             <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
                         </svg>
                     </button>
+                    <button class="icon-btn" id="btnNewGroup" title="New Group">
+                        <!-- Group icon -->
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                        </svg>
+                    </button>
                 </div>
+            </div>
+
+            <!-- Tabs for Chats and Groups -->
+            <div class="sidebar-tabs">
+                <button class="tab-btn active" id="tabChats" onclick="App.switchTab('chats')">Chats</button>
+                <button class="tab-btn" id="tabGroups" onclick="App.switchTab('groups')">Groups</button>
             </div>
 
             <div class="sidebar-search" id="sidebarSearch">
@@ -40,6 +55,9 @@
 
             <div class="conversation-list" id="conversationList">
                 <div class="loading-spinner" id="convLoading"></div>
+            </div>
+
+            <div class="conversation-list" id="groupList" style="display: none;">
             </div>
 
             <div class="sidebar-user" id="sidebarUser">
@@ -121,6 +139,29 @@
                 <div class="modal-user-list" id="modalUserList">
                     <div class="search-empty">Type a name to search</div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Group Modal -->
+    <div class="modal-overlay" id="newGroupModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Create Group</h3>
+                <button class="modal-close" id="groupModalClose">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-search">
+                    <input type="text" id="groupNameInput" placeholder="Group name" autocomplete="off">
+                </div>
+                <div class="modal-search">
+                    <input type="text" id="groupSearchInput" placeholder="Search people to add..." autocomplete="off">
+                </div>
+                <div class="selected-members" id="selectedMembers"></div>
+                <div class="modal-user-list" id="groupUserList">
+                    <div class="search-empty">Type a name to search</div>
+                </div>
+                <button class="btn-create-group" id="btnCreateGroup" disabled>Create Group</button>
             </div>
         </div>
     </div>
