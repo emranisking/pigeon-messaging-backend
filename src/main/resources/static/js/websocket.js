@@ -12,6 +12,7 @@ const WS = (() => {
     let onMessageReceived = null;
     let onStatusUpdate = null;
     let onConnectionChange = null;
+    let onGroupMessageReceived = null;
 
     /**
      * Connect to WebSocket with JWT auth.
@@ -75,6 +76,20 @@ const WS = (() => {
                 }
             );
 
+            // Subscribe to group messages
+            subscriptions.groupMessages = stompClient.subscribe(
+                '/user/queue/group-messages',
+                (frame) => {
+                    try {
+                        const message = JSON.parse(frame.body);
+                        console.log('[WS] Group message received:', message.messageId);
+                        if (onGroupMessageReceived) onGroupMessageReceived(message);
+                    } catch (e) {
+                        console.error('Error parsing group message:', e);
+                    }
+                }
+            );
+
         }, (error) => {
             connected = false;
             console.error('WebSocket error:', error);
@@ -116,6 +131,67 @@ const WS = (() => {
 
         stompClient.send('/app/chat.send', {}, JSON.stringify(payload));
         return true;
+    }
+
+    /**
+     * Send a group message.
+     */
+    function sendGroupMessage(groupId, content) {
+        if (!stompClient || !connected) {
+            console.error('Not connected');
+            return false;
+        }
+
+        const payload = {
+            groupId: groupId,
+            content: content
+        };
+
+        stompClient.send('/app/group.send', {}, JSON.stringify(payload));
+        return true;
+    }
+
+    /**
+     * Subscribe to a specific group topic.
+     */
+    function subscribeToGroup(groupId) {
+        if (!stompClient || !connected) {
+            console.error('Not connected');
+            return null;
+        }
+
+        const subKey = `group_${groupId}`;
+        if (subscriptions[subKey]) {
+            return subscriptions[subKey];
+        }
+
+        subscriptions[subKey] = stompClient.subscribe(
+            `/topic/group/${groupId}`,
+            (frame) => {
+                try {
+                    const message = JSON.parse(frame.body);
+                    console.log('[WS] Group topic message:', message.messageId);
+                    if (onGroupMessageReceived) onGroupMessageReceived(message);
+                } catch (e) {
+                    console.error('Error parsing group message:', e);
+                }
+            }
+        );
+
+        return subscriptions[subKey];
+    }
+
+    /**
+     * Unsubscribe from a specific group topic.
+     */
+    function unsubscribeFromGroup(groupId) {
+        const subKey = `group_${groupId}`;
+        if (subscriptions[subKey]) {
+            try {
+                subscriptions[subKey].unsubscribe();
+            } catch (e) {}
+            delete subscriptions[subKey];
+        }
     }
 
     /**
@@ -181,6 +257,7 @@ const WS = (() => {
             case 'message': onMessageReceived = handler; break;
             case 'status': onStatusUpdate = handler; break;
             case 'connection': onConnectionChange = handler; break;
+            case 'groupMessage': onGroupMessageReceived = handler; break;
         }
     }
 
@@ -188,6 +265,9 @@ const WS = (() => {
         connect,
         disconnect,
         sendMessage,
+        sendGroupMessage,
+        subscribeToGroup,
+        unsubscribeFromGroup,
         sendDelivered,
         sendSeen,
         isConnected,

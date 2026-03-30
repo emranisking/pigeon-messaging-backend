@@ -97,6 +97,32 @@ const API = (() => {
         return request('GET', `/api/messages/conversations/${encodeURIComponent(conversationId)}/stats`);
     }
 
+    // ---- Groups ----
+
+    async function createGroup(name, memberIds) {
+        return request('POST', '/api/groups', { name, memberIds });
+    }
+
+    async function getGroups() {
+        return request('GET', '/api/groups');
+    }
+
+    async function getGroup(groupId) {
+        return request('GET', `/api/groups/${groupId}`);
+    }
+
+    async function getGroupMessages(groupId, page = 0, size = 50) {
+        return request('GET', `/api/groups/${groupId}/messages?page=${page}&size=${size}`);
+    }
+
+    async function addGroupMember(groupId, userId) {
+        return request('POST', `/api/groups/${groupId}/members`, { userId });
+    }
+
+    async function removeGroupMember(groupId, userId) {
+        return request('DELETE', `/api/groups/${groupId}/members/${userId}`);
+    }
+
     return {
         login,
         register,
@@ -106,6 +132,13 @@ const API = (() => {
         getConversations,
         getMessages,
         getConversationStats,
-        getToken
+        getToken,
+        // Group APIs
+        createGroup,
+        getGroups,
+        getGroup,
+        getGroupMessages,
+        addGroupMember,
+        removeGroupMember
     };
 })();

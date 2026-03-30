@@ -1232,3 +1232,127 @@ body {
 .notification-sound {
     display: none;
 }
+
+/* ============================================================
+   SIDEBAR TABS (Chats / Groups)
+   ============================================================ */
+
+.sidebar-tabs {
+    display: flex;
+    padding: 0 12px;
+    gap: 4px;
+    border-bottom: 1px solid var(--border);
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 12px 16px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition);
+}
+
+.tab-btn:hover {
+    background: var(--bg-hover);
+}
+
+.tab-btn.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+}
+
+/* ============================================================
+   GROUP CHAT STYLES
+   ============================================================ */
+
+.group-avatar {
+    position: relative;
+}
+
+.group-avatar::after {
+    content: '👥';
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    font-size: 10px;
+    background: var(--bg);
+    border-radius: 50%;
+    padding: 1px;
+}
+
+.group-sender-name {
+    font-size: 11px;
+    font-weight: 600;
+    margin-bottom: 2px;
+    margin-left: 4px;
+}
+
+.empty-list {
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--text-tertiary);
+    font-size: 14px;
+}
+
+/* ============================================================
+   NEW GROUP MODAL
+   ============================================================ */
+
+.selected-members {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+    min-height: 0;
+}
+
+.selected-member {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--primary-light);
+    color: var(--primary);
+    padding: 6px 10px;
+    border-radius: var(--radius-lg);
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.selected-member .remove-member {
+    cursor: pointer;
+    font-weight: bold;
+    opacity: 0.7;
+}
+
+.selected-member .remove-member:hover {
+    opacity: 1;
+}
+
+.btn-create-group {
+    width: 100%;
+    padding: 12px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--transition);
+    margin-top: 12px;
+}
+
+.btn-create-group:hover:not(:disabled) {
+    background: var(--primary-hover);
+}
+
+.btn-create-group:disabled {
+    background: var(--border);
+    color: var(--text-tertiary);
+    cursor: not-allowed;
+}
