@@ -898,24 +898,6 @@ const App = (() => {
 //            groupMessages[groupId].push(msg);
 //        }
 
-        //Check if the a pending message exists
-        const pendingIndex = groupMessages[groupId].findIndex(m =>
-            m._pending &&
-            m.senderId === msg.senderId &&
-            m.content === msg.content
-        )
-
-        if (pendingIndex !== -1) {
-            // Replace pending message with the one from server
-            groupMessages[groupId][pendingIndex] = msg;
-        } else{
-            //Normal duplicate
-            const exists = groupMessages[groupId].some(m => m.messageId === msg.messageId);
-            if (!exists) {
-                groupMessages[groupId].push(msg);
-            }
-        }
-
         // Update group in list
         const group = groups.find(g => g.id === groupId);
         if (group) {

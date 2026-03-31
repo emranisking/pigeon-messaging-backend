@@ -1,5 +1,4 @@
 package com.example.messaging.websocket.config;
-
 import com.example.messaging.websocket.interceptor.JwtChannelInterceptor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.context.annotation.Configuration;
