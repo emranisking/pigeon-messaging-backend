@@ -110,6 +110,7 @@ const App = (() => {
 
         // Set user info in sidebar
         setupUI();
+        setMobilePanels(false);
 
         // Load conversations
         await loadConversations();
@@ -127,8 +128,25 @@ const App = (() => {
     function setupUI() {
         const userAvatar = document.getElementById('userAvatar');
         const userName = document.getElementById('userName');
-        setAvatarEl(userAvatar, currentUser.username);
-        userName.textContent = currentUser.username;
+        if (userAvatar && userName) {
+            setAvatarEl(userAvatar, currentUser.username);
+            userName.textContent = currentUser.username;
+        }
+    }
+
+    function setMobilePanels(showChat) {
+        if (window.innerWidth > 768) return;
+        const sidebar = document.getElementById('sidebar');
+        const chatPanel = document.getElementById('chatPanel');
+        if (!sidebar || !chatPanel) return;
+
+        if (showChat) {
+            sidebar.classList.add('hidden');
+            chatPanel.classList.remove('hidden');
+        } else {
+            sidebar.classList.remove('hidden');
+            chatPanel.classList.add('hidden');
+        }
     }
 
     // ---- Conversations ----
@@ -220,27 +238,27 @@ const App = (() => {
     async function openConversation(conversationId, otherUserId, otherUsername) {
         // Clear group state when opening DM
         activeGroup = null;
-        
+
         activeConversation = conversationId;
         activeOtherUser = { id: otherUserId, username: otherUsername };
         userCache[otherUserId] = activeOtherUser;
 
-        // Update UI
-        document.getElementById('chatEmpty').style.display = 'none';
+        // Update UI - properly show chat view and hide empty state
+        const chatEmpty = document.getElementById('chatEmpty');
         const chatView = document.getElementById('chatView');
-        chatView.style.display = 'flex';
+        if (chatEmpty) chatEmpty.style.display = 'none';
+        if (chatView) chatView.style.display = 'flex';
 
         // Set chat header
         const chatAvatar = document.getElementById('chatAvatar');
-        setAvatarEl(chatAvatar, otherUsername);
-        document.getElementById('chatName').textContent = otherUsername;
-        document.getElementById('chatStatus').textContent = 'Active now';
+        const chatName = document.getElementById('chatName');
+        const chatStatus = document.getElementById('chatStatus');
+        if (chatAvatar) setAvatarEl(chatAvatar, otherUsername);
+        if (chatName) chatName.textContent = otherUsername;
+        if (chatStatus) chatStatus.textContent = 'Active now';
 
         // Mobile: hide sidebar, show chat
-        if (window.innerWidth <= 768) {
-            document.getElementById('sidebar').classList.add('hidden');
-            document.getElementById('chatPanel').classList.remove('hidden');
-        }
+        setMobilePanels(true);
 
         // Highlight active conversation
         document.querySelectorAll('.conversation-item').forEach(el => {
@@ -261,11 +279,48 @@ const App = (() => {
         markMessagesAsSeen(conversationId);
 
         // Focus input
-        document.getElementById('chatInput').focus();
+        const chatInput = document.getElementById('chatInput');
+        if (chatInput) chatInput.focus();
+    }
+
+    function closeConversation() {
+        // Clear active conversation state
+        activeConversation = null;
+        activeOtherUser = null;
+        activeGroup = null;
+
+        // Reset UI: show empty state, hide chat view
+        const chatEmpty = document.getElementById('chatEmpty');
+        const chatView = document.getElementById('chatView');
+        if (chatEmpty) chatEmpty.style.display = 'flex';
+        if (chatView) chatView.style.display = 'none';
+
+        // Clear the chat input
+        const chatInput = document.getElementById('chatInput');
+        if (chatInput) {
+            chatInput.value = '';
+            chatInput.style.height = 'auto';
+        }
+
+        // Remove active highlight from all conversation items
+        document.querySelectorAll('.conversation-item').forEach(el => {
+            el.classList.remove('active');
+        });
+
+        // Clear messages container
+        const messagesContainer = document.getElementById('messagesContainer');
+        if (messagesContainer) {
+            messagesContainer.innerHTML = '';
+        }
+
+        // Mobile: show sidebar
+        setMobilePanels(false);
     }
 
     async function loadMessages(conversationId, prepend = false) {
         const container = document.getElementById('messagesContainer');
+        if (!container) return;
+
         if (!prepend) {
             container.innerHTML = '<div class="loading-spinner"></div>';
         }
@@ -295,7 +350,7 @@ const App = (() => {
             }
         } catch (err) {
             console.error('Failed to load messages:', err);
-            if (!prepend) {
+            if (!prepend && container) {
                 container.innerHTML = '';
             }
         }
@@ -304,6 +359,8 @@ const App = (() => {
     // ---- Render Messages ----
     function renderMessages(preserveScroll = false) {
         const container = document.getElementById('messagesContainer');
+        if (!container) return;
+
         const convId = activeConversation || '_pending_conv';
         const msgs = messages[convId] || [];
 
@@ -748,10 +805,7 @@ const App = (() => {
         document.getElementById('chatStatus').textContent = `${memberCount} members`;
 
         // Mobile: hide sidebar
-        if (window.innerWidth <= 768) {
-            document.getElementById('sidebar').classList.add('hidden');
-            document.getElementById('chatPanel').classList.remove('hidden');
-        }
+        setMobilePanels(true);
 
         // Highlight active group
         document.querySelectorAll('.conversation-item').forEach(el => {
@@ -1058,10 +1112,7 @@ const App = (() => {
         });
 
         // Back button (mobile)
-        document.getElementById('btnBack').addEventListener('click', () => {
-            document.getElementById('sidebar').classList.remove('hidden');
-            document.getElementById('chatPanel').classList.add('hidden');
-        });
+        document.getElementById('btnBack').addEventListener('click', closeConversation);
 
         // Load older messages
         document.getElementById('messagesContainer').addEventListener('scroll', (e) => {
@@ -1268,10 +1319,7 @@ const App = (() => {
         // Clear messages area
         document.getElementById('messagesContainer').innerHTML = '';
 
-        if (window.innerWidth <= 768) {
-            document.getElementById('sidebar').classList.add('hidden');
-            document.getElementById('chatPanel').classList.remove('hidden');
-        }
+        setMobilePanels(true);
 
         // Override send to handle new conversation
         document.getElementById('chatInput').focus();

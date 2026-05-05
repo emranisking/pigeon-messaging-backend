@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd \"D:\\\\\\\\project\\\\\\\\pigeon-messaging-app\")",
+      "Bash(git restore *)"
+    ]
+  }
+}
