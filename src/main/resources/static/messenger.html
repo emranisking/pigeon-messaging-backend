@@ -14,7 +14,44 @@
         <!-- ====== SIDEBAR ====== -->
         <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <h2>Messenger</h2>
+                <div class="sidebar-logo-container">
+                    <svg viewBox="0 0 200 200" width="32" height="32" xmlns="http://www.w3.org/2000/svg" style="margin-right: 8px;">
+                        <!-- Pigeon Body -->
+                        <ellipse cx="100" cy="110" rx="35" ry="45" fill="#0a84ff"/>
+                        
+                        <!-- Pigeon Head -->
+                        <circle cx="100" cy="65" r="28" fill="#0a84ff"/>
+                        
+                        <!-- Pigeon Eye (intense) -->
+                        <circle cx="108" cy="60" r="5" fill="#1a202c"/>
+                        <circle cx="109" cy="58" r="2" fill="white"/>
+                        
+                        <!-- Pigeon Beak -->
+                        <path d="M 115 65 L 130 63 L 115 68 Z" fill="#8b7355"/>
+                        
+                        <!-- Gold Necklace -->
+                        <ellipse cx="100" cy="88" rx="42" ry="8" fill="none" stroke="#d4a574" stroke-width="3"/>
+                        
+                        <!-- Message Capsule -->
+                        <rect x="85" y="82" width="30" height="14" rx="7" fill="#8b7355" stroke="#d4a574" stroke-width="1.5"/>
+                        
+                        <!-- Lock Icon on Capsule -->
+                        <rect x="92" y="87" width="6" height="5" rx="1" fill="#d4a574"/>
+                        <path d="M 94 87 Q 94 85 96 85 Q 98 85 98 87" stroke="#d4a574" stroke-width="1" fill="none"/>
+                        
+                        <!-- Scroll attached to capsule -->
+                        <line x1="115" y1="89" x2="125" y2="92" stroke="#8b7355" stroke-width="2"/>
+                        <path d="M 125 90 L 128 88 L 125 94 Z" fill="#8b7355"/>
+                        
+                        <!-- Wings -->
+                        <ellipse cx="70" cy="110" rx="15" ry="30" fill="#0a84ff" opacity="0.8"/>
+                        <ellipse cx="130" cy="110" rx="15" ry="30" fill="#0a84ff" opacity="0.8"/>
+                        
+                        <!-- Perch (wooden branch) -->
+                        <rect x="40" y="145" width="120" height="8" rx="4" fill="#8b7355" stroke="#6b5345" stroke-width="1"/>
+                    </svg>
+                    <h2>PIGEON</h2>
+                </div>
                 <div class="sidebar-header-actions">
                     <button class="icon-btn" id="btnNewChat" title="New Message">
                         <!-- Compose icon -->
@@ -74,13 +111,41 @@
         </div>
 
         <!-- ====== CHAT PANEL ====== -->
-        <div class="chat-panel" id="chatPanel">
+        <div class="chat-panel hidden" id="chatPanel">
             <!-- Empty state (no conversation selected) -->
+        <!-- Empty state (no conversation selected) -->
             <div class="chat-empty" id="chatEmpty">
                 <div class="chat-empty-icon">
-                    <svg width="36" height="36" viewBox="0 0 36 36">
-                        <path d="M18 0C7.854 0 0 7.126 0 16.41c0 5.178 2.533 9.567 6.537 12.58V36l6.554-3.672c1.752.488 3.604.752 5.51.752 9.834 0 17.802-7.127 17.802-15.882C36.403 7.126 28.435 0 18 0z" fill="#0084ff"/>
-                        <path d="M19.88 21.024L15.6 16.56l-8.4 4.704L16.44 11.88l4.44 4.464 8.22-4.704-9.22 9.384z" fill="#fff"/>
+                    <svg viewBox="0 0 200 200" width="48" height="48" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Pigeon Body -->
+                        <ellipse cx="100" cy="110" rx="35" ry="45" fill="#0a84ff"/>
+                        
+                        <!-- Pigeon Head -->
+                        <circle cx="100" cy="65" r="28" fill="#0a84ff"/>
+                        
+                        <!-- Pigeon Eye (intense) -->
+                        <circle cx="108" cy="60" r="5" fill="#1a202c"/>
+                        <circle cx="109" cy="58" r="2" fill="white"/>
+                        
+                        <!-- Pigeon Beak -->
+                        <path d="M 115 65 L 130 63 L 115 68 Z" fill="#8b7355"/>
+                        
+                        <!-- Gold Necklace -->
+                        <ellipse cx="100" cy="88" rx="42" ry="8" fill="none" stroke="#d4a574" stroke-width="3"/>
+                        
+                        <!-- Message Capsule -->
+                        <rect x="85" y="82" width="30" height="14" rx="7" fill="#8b7355" stroke="#d4a574" stroke-width="1.5"/>
+                        
+                        <!-- Scroll attached to capsule -->
+                        <line x1="115" y1="89" x2="125" y2="92" stroke="#8b7355" stroke-width="2"/>
+                        <path d="M 125 90 L 128 88 L 125 94 Z" fill="#8b7355"/>
+                        
+                        <!-- Wings -->
+                        <ellipse cx="70" cy="110" rx="15" ry="30" fill="#0a84ff" opacity="0.8"/>
+                        <ellipse cx="130" cy="110" rx="15" ry="30" fill="#0a84ff" opacity="0.8"/>
+                        
+                        <!-- Perch (wooden branch) -->
+                        <rect x="40" y="145" width="120" height="8" rx="4" fill="#8b7355" stroke="#6b5345" stroke-width="1"/>
                     </svg>
                 </div>
                 <h3>Your Messages</h3>
