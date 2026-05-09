@@ -1,24 +1,36 @@
-/* ============================================================
-   Messenger App — Main application logic
-   ============================================================ */
+/**
+ * ============================================================
+ * MESSENGER APP - MAIN APPLICATION MODULE
+ * ============================================================
+ * 
+ * Purpose: Core application logic and state management
+ * - Initializes app on page load
+ * - Manages conversations and group chats
+ * - Handles message rendering and sending
+ * - Manages WebSocket connections and real-time updates
+ * - Provides UI interaction handlers
+ * - Manages modal dialogs for creating chats/groups
+ * 
+ * ============================================================
+ */
 
 const App = (() => {
     // ---- State ----
-    let currentUser = null;          // { id, username }
-    let conversations = [];          // [{ conversationId, otherUser, lastMessage, ... }]
-    let groups = [];                 // [{ id, name, members, lastMessage, ... }]
-    let activeConversation = null;   // conversationId
-    let activeGroup = null;          // groupId
-    let activeOtherUser = null;      // { id, username }
-    let messages = {};               // { conversationId: [msg, ...] }
-    let groupMessages = {};          // { groupId: [msg, ...] }
-    let nextCursor = {};             // { conversationId: cursor }
-    let hasMore = {};                // { conversationId: bool }
-    let userCache = {};              // { id: { id, username } }
-    let deliveredMessages = new Set(); // track which messages we sent "delivered" for
-    let seenMessages = new Set();      // track which messages we sent "seen" for
+    let currentUser = null;
+    let conversations = [];
+    let groups = [];
+    let activeConversation = null;
+    let activeGroup = null;
+    let activeOtherUser = null;
+    let messages = {};
+    let groupMessages = {};
+    let nextCursor = {};
+    let hasMore = {};
+    let userCache = {};
+    let deliveredMessages = new Set();
+    let seenMessages = new Set();
     let searchDebounce = null;
-    let currentTab = 'chats';        // 'chats' or 'groups'
+    let currentTab = 'chats';
 
     // ---- Avatar Colors ----
     const AVATAR_COLORS = [
@@ -44,14 +56,10 @@ const App = (() => {
     }
 
     // ---- Time Formatting ----
-    /**
-     * Normalize any timestamp (ISO string, epoch seconds, epoch millis) to a Date.
-     */
     function parseTimestamp(value) {
         if (!value) return new Date();
         if (value instanceof Date) return value;
         if (typeof value === 'string') return new Date(value);
-        // Numeric: if < 1e12 treat as epoch seconds, otherwise millis
         if (typeof value === 'number') {
             return value < 1e12 ? new Date(value * 1000) : new Date(value);
         }
@@ -95,7 +103,6 @@ const App = (() => {
 
     // ---- Initialization ----
     async function init() {
-        // Check auth
         const token = localStorage.getItem('token');
         const userId = localStorage.getItem('userId');
         const username = localStorage.getItem('username');
@@ -108,20 +115,13 @@ const App = (() => {
         currentUser = { id: userId, username: username || 'User' };
         userCache[userId] = currentUser;
 
-        // Set user info in sidebar
         setupUI();
         setMobilePanels(false);
 
-        // Load conversations
         await loadConversations();
-
-        // Load groups
         await loadGroups();
 
-        // Connect WebSocket
         setupWebSocket(token, userId);
-
-        // Setup event handlers
         setupEventHandlers();
     }
 
@@ -156,7 +156,6 @@ const App = (() => {
             const data = await API.getConversations();
             conversations = data || [];
 
-            // Cache users
             conversations.forEach(c => {
                 if (c.otherUser) {
                     userCache[c.otherUser.id] = c.otherUser;
@@ -175,7 +174,6 @@ const App = (() => {
         const listEl = document.getElementById('conversationList');
         const loadingEl = document.getElementById('convLoading');
 
-        // Sort by last message time, most recent first
         const sorted = [...conversations].sort((a, b) => {
             const timeA = a.lastMessage ? parseTimestamp(a.lastMessage.createdAt) : parseTimestamp(a.createdAt);
             const timeB = b.lastMessage ? parseTimestamp(b.lastMessage.createdAt) : parseTimestamp(b.createdAt);
@@ -198,7 +196,7 @@ const App = (() => {
             }
 
             html += `
-                <div class="conversation-item${isActive ? ' active' : ''}" 
+                <div class="conversation-item${isActive ? ' active' : ''}"
                      data-conv-id="${conv.conversationId}"
                      data-user-id="${user.id}"
                      data-username="${escapeHtml(user.username)}"
@@ -218,7 +216,6 @@ const App = (() => {
             `;
         });
 
-        // Preserve loading spinner reference
         listEl.innerHTML = html;
     }
 
@@ -236,20 +233,16 @@ const App = (() => {
 
     // ---- Open Conversation ----
     async function openConversation(conversationId, otherUserId, otherUsername) {
-        // Clear group state when opening DM
         activeGroup = null;
-
         activeConversation = conversationId;
         activeOtherUser = { id: otherUserId, username: otherUsername };
         userCache[otherUserId] = activeOtherUser;
 
-        // Update UI - properly show chat view and hide empty state
         const chatEmpty = document.getElementById('chatEmpty');
         const chatView = document.getElementById('chatView');
         if (chatEmpty) chatEmpty.style.display = 'none';
         if (chatView) chatView.style.display = 'flex';
 
-        // Set chat header
         const chatAvatar = document.getElementById('chatAvatar');
         const chatName = document.getElementById('chatName');
         const chatStatus = document.getElementById('chatStatus');
@@ -257,15 +250,12 @@ const App = (() => {
         if (chatName) chatName.textContent = otherUsername;
         if (chatStatus) chatStatus.textContent = 'Active now';
 
-        // Mobile: hide sidebar, show chat
         setMobilePanels(true);
 
-        // Highlight active conversation
         document.querySelectorAll('.conversation-item').forEach(el => {
             el.classList.toggle('active', el.dataset.convId === conversationId);
         });
 
-        // Load messages if not cached
         if (!messages[conversationId]) {
             messages[conversationId] = [];
             nextCursor[conversationId] = null;
@@ -275,45 +265,37 @@ const App = (() => {
             renderMessages();
         }
 
-        // Send seen for unread messages from the other user
         markMessagesAsSeen(conversationId);
 
-        // Focus input
         const chatInput = document.getElementById('chatInput');
         if (chatInput) chatInput.focus();
     }
 
     function closeConversation() {
-        // Clear active conversation state
         activeConversation = null;
         activeOtherUser = null;
         activeGroup = null;
 
-        // Reset UI: show empty state, hide chat view
         const chatEmpty = document.getElementById('chatEmpty');
         const chatView = document.getElementById('chatView');
         if (chatEmpty) chatEmpty.style.display = 'flex';
         if (chatView) chatView.style.display = 'none';
 
-        // Clear the chat input
         const chatInput = document.getElementById('chatInput');
         if (chatInput) {
             chatInput.value = '';
             chatInput.style.height = 'auto';
         }
 
-        // Remove active highlight from all conversation items
         document.querySelectorAll('.conversation-item').forEach(el => {
             el.classList.remove('active');
         });
 
-        // Clear messages container
         const messagesContainer = document.getElementById('messagesContainer');
         if (messagesContainer) {
             messagesContainer.innerHTML = '';
         }
 
-        // Mobile: show sidebar
         setMobilePanels(false);
     }
 
@@ -330,7 +312,6 @@ const App = (() => {
             const data = await API.getMessages(conversationId, cursor, 50);
 
             if (data && data.messages) {
-                // Messages come newest first from the API, reverse for display
                 const newMsgs = data.messages.reverse();
 
                 if (prepend) {
@@ -371,12 +352,10 @@ const App = (() => {
 
         let html = '';
 
-        // Load more button
         if (hasMore[convId]) {
             html += '<div class="load-more-wrap"><button class="btn-load-more" onclick="App.loadOlder()">Load older messages</button></div>';
         }
 
-        // Group messages by sender + time proximity
         let lastSenderId = null;
         let lastDate = null;
 
@@ -386,14 +365,12 @@ const App = (() => {
             const msgDate = parseTimestamp(msg.createdAt);
             const dateKey = msgDate.toDateString();
 
-            // Date separator
             if (dateKey !== lastDate) {
                 html += `<div class="date-separator">${formatDateSeparator(msg.createdAt)}</div>`;
                 lastDate = dateKey;
                 lastSenderId = null;
             }
 
-            // Determine bubble position in group
             const sameSender = msg.senderId === lastSenderId;
             const nextMsg = msgs[i + 1];
             const nextSameSender = nextMsg && nextMsg.senderId === msg.senderId &&
@@ -410,7 +387,6 @@ const App = (() => {
             const direction = isSent ? 'sent' : 'received';
             const otherUser = activeOtherUser || { username: '?' };
 
-            // Show avatar only for last message in received group
             let avatarHtml = '';
             if (!isSent) {
                 if (isLastInGroup) {
@@ -420,7 +396,6 @@ const App = (() => {
                 }
             }
 
-            // Status indicator (only for last sent message or specifically relevant)
             let statusHtml = '';
             if (isSent && isLastInGroup) {
                 statusHtml = renderStatusIcon(msg.status, otherUser);
@@ -434,7 +409,6 @@ const App = (() => {
                         <div class="message-time">${formatFullTime(msg.createdAt)}</div>
                         ${statusHtml}
                     </div>
-                    ${isSent ? '' : ''}
                 </div>
             `;
 
@@ -444,7 +418,6 @@ const App = (() => {
         container.innerHTML = html;
 
         if (preserveScroll) {
-            // Keep scroll position when prepending
             const newScrollHeight = container.scrollHeight;
             container.scrollTop = newScrollHeight - oldScrollHeight;
         } else if (scrolledToBottom || !preserveScroll) {
@@ -474,7 +447,6 @@ const App = (() => {
 
     // ---- Send Message ----
     function sendMessage() {
-        // Check if we're in a group chat
         if (activeGroup) {
             sendGroupMessage();
             return;
@@ -487,7 +459,6 @@ const App = (() => {
 
         const success = WS.sendMessage(activeOtherUser.id, content, activeConversation);
         if (success) {
-            // Optimistic UI: show the message immediately without waiting for server echo
             const tempMsg = {
                 messageId: '_pending_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
                 conversationId: activeConversation || '_pending_conv',
@@ -505,7 +476,6 @@ const App = (() => {
             }
             messages[convId].push(tempMsg);
 
-            // Render immediately so sender sees their message
             if (activeConversation || convId === '_pending_conv') {
                 renderMessages();
                 scrollToBottom();
@@ -573,15 +543,12 @@ const App = (() => {
         const convId = msg.conversationId;
         const isSent = msg.senderId === currentUser.id;
 
-        // Initialize message list for this conversation if needed
         if (!messages[convId]) {
             messages[convId] = [];
         }
 
-        // Deduplicate by messageId
         const exists = messages[convId].some(m => m.messageId === msg.messageId);
         if (!exists) {
-            // If this is a server echo of our own sent message, replace the pending/optimistic version
             if (isSent) {
                 const pendingIdx = messages[convId].findIndex(
                     m => m._pending && m.senderId === msg.senderId && m.content === msg.content
@@ -589,7 +556,6 @@ const App = (() => {
                 if (pendingIdx !== -1) {
                     messages[convId].splice(pendingIdx, 1);
                 }
-                // Also check _pending_conv for new conversations
                 if (messages['_pending_conv'] && messages['_pending_conv'].length > 0) {
                     const pendingNewIdx = messages['_pending_conv'].findIndex(
                         m => m._pending && m.senderId === msg.senderId && m.content === msg.content
@@ -605,10 +571,8 @@ const App = (() => {
             messages[convId].push(msg);
         }
 
-        // Update or create conversation in sidebar
         updateConversationInList(msg);
 
-        // Handle new conversation: if activeConversation is null but we have a matching activeOtherUser
         if (!activeConversation && activeOtherUser) {
             const otherUserId = isSent ? msg.receiverId : msg.senderId;
             if (otherUserId === activeOtherUser.id) {
@@ -618,15 +582,12 @@ const App = (() => {
             }
         }
 
-        // If this is the active conversation, render messages
         if (activeConversation === convId) {
             renderMessages();
             scrollToBottom();
 
-            // Mark as delivered + seen since user is viewing this conversation
             if (!isSent) {
                 markMessageDelivered(msg);
-                // Small delay before marking as seen
                 setTimeout(() => {
                     const key = msg.messageId;
                     if (!seenMessages.has(key)) {
@@ -637,9 +598,7 @@ const App = (() => {
                 }, 500);
             }
         } else if (!isSent) {
-            // Not viewing this conversation — mark as delivered only
             markMessageDelivered(msg);
-            // Show notification effect on conversation item
             playNotificationEffect();
         }
     }
@@ -649,14 +608,12 @@ const App = (() => {
         const msgList = messages[convId];
 
         if (msgList) {
-            // Update the status of the matching message
             msgList.forEach(msg => {
                 if (msg.messageId === event.messageId) {
                     msg.status = event.status;
                 }
             });
 
-            // If we receive a "seen" for a conversation, mark all sent messages as seen
             if (event.status === 'seen') {
                 msgList.forEach(msg => {
                     if (msg.senderId === currentUser.id) {
@@ -667,13 +624,11 @@ const App = (() => {
                 });
             }
 
-            // Re-render if active
             if (activeConversation === convId) {
                 renderMessages();
             }
         }
 
-        // Update sidebar preview status
         updateConversationStatus(convId, event.status);
     }
 
@@ -691,7 +646,6 @@ const App = (() => {
                 messageId: msg.messageId
             };
         } else {
-            // New conversation
             const cachedUser = userCache[otherUserId];
             conv = {
                 conversationId: convId,
@@ -706,7 +660,6 @@ const App = (() => {
             };
             conversations.push(conv);
 
-            // Fetch user info if not cached
             if (!cachedUser) {
                 API.getUser(otherUserId).then(user => {
                     if (user) {
@@ -759,7 +712,7 @@ const App = (() => {
             }
 
             html += `
-                <div class="conversation-item${isActive ? ' active' : ''}" 
+                <div class="conversation-item${isActive ? ' active' : ''}"
                      data-group-id="${group.id}"
                      onclick="App.openGroup('${group.id}')">
                     <div class="conversation-avatar group-avatar" style="background:${getAvatarColor(group.name)}">
@@ -784,7 +737,6 @@ const App = (() => {
     }
 
     async function openGroup(groupId) {
-        // Clear DM state
         activeConversation = null;
         activeOtherUser = null;
         activeGroup = groupId;
@@ -792,27 +744,22 @@ const App = (() => {
         const group = groups.find(g => g.id === groupId);
         if (!group) return;
 
-        // Update UI
         document.getElementById('chatEmpty').style.display = 'none';
         const chatView = document.getElementById('chatView');
         chatView.style.display = 'flex';
 
-        // Set chat header for group
         const chatAvatar = document.getElementById('chatAvatar');
         setAvatarEl(chatAvatar, group.name);
         document.getElementById('chatName').textContent = group.name;
         const memberCount = group.members ? group.members.length : 0;
         document.getElementById('chatStatus').textContent = `${memberCount} members`;
 
-        // Mobile: hide sidebar
         setMobilePanels(true);
 
-        // Highlight active group
         document.querySelectorAll('.conversation-item').forEach(el => {
             el.classList.toggle('active', el.dataset.groupId === groupId);
         });
 
-        // Load messages if not cached
         if (!groupMessages[groupId]) {
             groupMessages[groupId] = [];
             await loadGroupMessages(groupId);
@@ -820,7 +767,6 @@ const App = (() => {
             renderGroupMessages();
         }
 
-        // Subscribe to group topic
         WS.subscribeToGroup(groupId);
 
         document.getElementById('chatInput').focus();
@@ -835,7 +781,6 @@ const App = (() => {
         try {
             const data = await API.getGroupMessages(groupId, page, 50);
             if (data) {
-                // Messages come newest first, reverse for display
                 const newMsgs = data.reverse();
                 if (page === 0) {
                     groupMessages[groupId] = newMsgs;
@@ -869,7 +814,6 @@ const App = (() => {
             const msgDate = parseTimestamp(msg.createdAt);
             const dateKey = msgDate.toDateString();
 
-            // Date separator
             if (dateKey !== lastDate) {
                 html += `<div class="date-separator">${formatDateSeparator(msg.createdAt)}</div>`;
                 lastDate = dateKey;
@@ -892,13 +836,11 @@ const App = (() => {
             const direction = isSent ? 'sent' : 'received';
             const senderName = msg.senderUsername || 'Unknown';
 
-            // Show sender name for received messages at start of group
             let senderHtml = '';
             if (!isSent && isNewGroup) {
                 senderHtml = `<div class="group-sender-name" style="color:${getAvatarColor(senderName)}">${escapeHtml(senderName)}</div>`;
             }
 
-            // Avatar for group messages
             let avatarHtml = '';
             if (!isSent) {
                 if (isLastInGroup) {
@@ -946,13 +888,6 @@ const App = (() => {
             groupMessages[groupId] = [];
         }
 
-//        // Deduplicate
-//        const exists = groupMessages[groupId].some(m => m.messageId === msg.messageId);
-//        if (!exists) {
-//            groupMessages[groupId].push(msg);
-//        }
-
-        //Check if the a pending message exists
         const pendingIndex = groupMessages[groupId].findIndex(m =>
             m._pending &&
             m.senderId === msg.senderId &&
@@ -960,24 +895,20 @@ const App = (() => {
         )
 
         if (pendingIndex !== -1) {
-            // Replace pending message with the one from server
             groupMessages[groupId][pendingIndex] = msg;
-        } else{
-            //Normal duplicate
+        } else {
             const exists = groupMessages[groupId].some(m => m.messageId === msg.messageId);
             if (!exists) {
                 groupMessages[groupId].push(msg);
             }
         }
 
-        // Update group in list
         const group = groups.find(g => g.id === groupId);
         if (group) {
             group.lastMessage = msg;
             renderGroupList();
         }
 
-        // If this is the active group, render
         if (activeGroup === groupId) {
             renderGroupMessages();
         } else {
@@ -993,7 +924,6 @@ const App = (() => {
 
         const success = WS.sendGroupMessage(activeGroup, content);
         if (success) {
-            // Optimistic UI
             const tempMsg = {
                 messageId: '_pending_' + Date.now(),
                 groupId: activeGroup,
@@ -1045,7 +975,6 @@ const App = (() => {
     }
 
     function playNotificationEffect() {
-        // Simple title flash
         const originalTitle = document.title;
         document.title = '💬 New Message!';
         setTimeout(() => { document.title = originalTitle; }, 3000);
@@ -1053,10 +982,8 @@ const App = (() => {
 
     // ---- Event Handlers ----
     function setupEventHandlers() {
-        // Send button
         document.getElementById('btnSend').addEventListener('click', sendMessage);
 
-        // Chat input
         const chatInput = document.getElementById('chatInput');
         chatInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
@@ -1066,27 +993,23 @@ const App = (() => {
         });
 
         chatInput.addEventListener('input', () => {
-            // Auto-resize
             chatInput.style.height = 'auto';
             chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px';
             updateSendButton();
         });
 
-        // Logout
         document.getElementById('btnLogout').addEventListener('click', () => {
             WS.disconnect();
             localStorage.clear();
             window.location.href = '/index.html';
         });
 
-        // New chat modal
         document.getElementById('btnNewChat').addEventListener('click', openNewChatModal);
         document.getElementById('modalClose').addEventListener('click', closeNewChatModal);
         document.getElementById('newChatModal').addEventListener('click', (e) => {
             if (e.target.id === 'newChatModal') closeNewChatModal();
         });
 
-        // New group modal
         document.getElementById('btnNewGroup').addEventListener('click', openNewGroupModal);
         document.getElementById('groupModalClose').addEventListener('click', closeNewGroupModal);
         document.getElementById('newGroupModal').addEventListener('click', (e) => {
@@ -1099,25 +1022,17 @@ const App = (() => {
         });
         document.getElementById('btnCreateGroup').addEventListener('click', handleCreateGroup);
 
-        // Modal search
         document.getElementById('modalSearchInput').addEventListener('input', (e) => {
             clearTimeout(searchDebounce);
             searchDebounce = setTimeout(() => searchUsersModal(e.target.value.trim()), 300);
         });
 
-        // Sidebar search
         document.getElementById('searchInput').addEventListener('input', (e) => {
             const query = e.target.value.trim().toLowerCase();
             filterConversations(query);
         });
 
-        // Back button (mobile)
         document.getElementById('btnBack').addEventListener('click', closeConversation);
-
-        // Load older messages
-        document.getElementById('messagesContainer').addEventListener('scroll', (e) => {
-            // Could implement infinite scroll here if desired
-        });
     }
 
     function updateSendButton() {
@@ -1126,7 +1041,6 @@ const App = (() => {
         btn.disabled = !input.value.trim();
     }
 
-    // ---- Search / Filter ----
     function filterConversations(query) {
         const items = document.querySelectorAll('.conversation-item');
         items.forEach(item => {
@@ -1296,15 +1210,12 @@ const App = (() => {
         closeNewChatModal();
         userCache[otherUserId] = { id: otherUserId, username: otherUsername };
 
-        // Check if conversation already exists
         const existing = conversations.find(c => c.otherUser && c.otherUser.id === otherUserId);
         if (existing) {
             openConversation(existing.conversationId, otherUserId, otherUsername);
             return;
         }
 
-        // No existing conversation — we'll create one when the first message is sent
-        // For now, set up the chat view with a temporary state
         activeConversation = null;
         activeOtherUser = { id: otherUserId, username: otherUsername };
 
@@ -1316,12 +1227,10 @@ const App = (() => {
         setAvatarEl(chatAvatar, otherUsername);
         document.getElementById('chatName').textContent = otherUsername;
 
-        // Clear messages area
         document.getElementById('messagesContainer').innerHTML = '';
 
         setMobilePanels(true);
 
-        // Override send to handle new conversation
         document.getElementById('chatInput').focus();
     }
 
@@ -1331,13 +1240,11 @@ const App = (() => {
         }
     }
 
-    // ---- Public Interface ----
     return {
         init,
         openConversation,
         startConversation,
         loadOlder,
-        // Group functions
         openGroup,
         createGroup,
         switchTab,
@@ -1347,5 +1254,4 @@ const App = (() => {
     };
 })();
 
-// Initialize on page load
 document.addEventListener('DOMContentLoaded', App.init);
