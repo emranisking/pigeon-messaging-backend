@@ -23,13 +23,6 @@ Without RabbitMQ:
 WebSocket → DB → Broadcast
 ```
 
-❌ Problem:
-
-* Slow
-* Blocking
-* No retry
-* No scalability
-
 ---
 
 With RabbitMQ:
