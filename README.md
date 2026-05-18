@@ -14,7 +14,7 @@ System now includes:
 * ✅ PostgreSQL (relationships)
 
 ---
-![Pigeon-Messaging-architecture.png](Pigeon-Messaging-architecture.png)
+![Architecture](./Pigeon-Messaging-architecture.png)
 
 ---
 
