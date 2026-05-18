@@ -14,6 +14,9 @@ System now includes:
 * ✅ PostgreSQL (relationships)
 
 ---
+![Pigeon-Messaging-architecture.png](Pigeon-Messaging-architecture.png)
+
+---
 
 # 🧠 Why RabbitMQ?
 
